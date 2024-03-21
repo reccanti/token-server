@@ -1,22 +1,18 @@
 import express from "express";
 import cors from "cors";
 import morgan from "morgan";
-import { inspect } from "util";
-import chokidar from "chokidar";
-import { resolve } from "path";
 
-import { Tokens } from "./Tokens";
+import { Tokens } from "./TokenModel";
+import { TokenFileHandler } from "./TokenFileHandler";
+import { Metadata } from "./TokenModel";
 
 async function start() {
-  const tokens = new Tokens();
-  await tokens.initialize();
-
-  // watch for changes in the tokens directory
-  // watch(resolve(__dirname, "..", "tokens"), async () => {
-  //   console.log("a change...");
-  // });
-  chokidar.watch(resolve(__dirname, "..", "tokens", "themes")).on("all", () => {
-    console.log("a change...");
+  // create a file handler and watch for changes
+  const fileHandler = new TokenFileHandler();
+  await fileHandler.initializeFileStructure();
+  let tokens = await fileHandler.loadTokensFromFiles();
+  fileHandler.on("themesChanged", (updatedTokens) => {
+    tokens = updatedTokens;
   });
 
   const app = express();
@@ -25,66 +21,41 @@ async function start() {
   app.use(express.json());
 
   app.post("/figma", async (req, res) => {
-    // if the tokens haven't been created yet, create them and return the
-    // appropriate response
-    if (!tokens.tokens) {
-      console.log("creating...");
-      const pluginVersion = req.body.version;
-      const updatedAt = req.body.updatedAt;
-
-      await tokens.create({ pluginVersion, updatedAt });
-      const metadata = tokens.metadata;
-
-      return await res.status(201).json({
-        created: true,
-        version: metadata.pluginVersion,
-        updatedAt: metadata.updatedAt,
-      });
-    }
-    // otherwise, return the current values
-    else {
-      console.log("fetching initial...");
-
-      const values = tokens.tokens;
-      const metadata = tokens.metadata;
-      return await res.status(200).json({
-        created: false,
-        version: metadata.pluginVersion,
-        updatedAt: metadata.updatedAt,
-        values,
-      });
-    }
+    return await res.status(200).json({
+      created: false,
+      version: tokens.metadata.pluginVersion,
+      updatedAt: tokens.metadata.updatedAt,
+      values: tokens.tokens,
+    });
   });
 
   app.get("/figma", async (req, res) => {
-    console.log("getting...");
-
-    const values = tokens.tokens;
-    const metadata = tokens.metadata;
-
-    console.log(metadata);
     return await res.status(200).json({
       created: false,
-      version: metadata.pluginVersion,
-      updatedAt: metadata.updatedAt,
-      values,
+      version: tokens.metadata.pluginVersion,
+      updatedAt: tokens.metadata.updatedAt,
+      values: tokens.tokens,
     });
   });
 
   app.put("/figma", async (req, res) => {
-    console.log("updating...");
-
     const pluginVersion = req.body.version;
     const updatedAt = req.body.updatedAt;
     const newValues = req.body.values;
 
-    await tokens.update(newValues, { pluginVersion, updatedAt });
-    const metadata = tokens.metadata;
+    const metadata: Metadata = {
+      pluginVersion,
+      updatedAt,
+    };
+
+    const updatedTokens = new Tokens(newValues, metadata);
+    await fileHandler.saveTokensToFiles(updatedTokens);
+    const savedTokens = await fileHandler.loadTokensFromFiles();
 
     return await res.status(200).json({
-      version: metadata.pluginVersion,
-      updatedAt: metadata.updatedAt,
-      values: tokens.tokens,
+      version: savedTokens.metadata.pluginVersion,
+      updatedAt: savedTokens.metadata.updatedAt,
+      values: savedTokens.tokens,
     });
   });
 

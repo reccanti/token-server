@@ -1,0 +1,24 @@
+{
+  "name": "token-server",
+  "version": "1.0.0",
+  "description": "A server that can connects Tokens Studio to code and allows realtime updates",
+  "main": "index.js",
+  "scripts": {
+    "start": "tsx watch src/index.ts"
+  },
+  "author": "Blair Wilcox <blairwilcox93@gmail.com>",
+  "license": "AGPL-3.0-or-later",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.0",
+    "style-dictionary": "^3.9.2",
+    "tsx": "^4.7.1"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/morgan": "^1.9.9",
+    "morgan": "^1.10.0",
+    "nodemon": "^3.1.0"
+  }
+}

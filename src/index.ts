@@ -3,65 +3,75 @@ import cors from "cors";
 import morgan from "morgan";
 import { inspect } from "util";
 
+import { Tokens } from "./Tokens";
+
+const tokens = new Tokens();
+
 const app = express();
 app.use(cors());
 app.use(morgan("combined"));
 app.use(express.json());
 
-let version;
-let updatedAt;
-
 app.post("/figma", async (req, res) => {
-  console.log("posting...");
-  console.log(req.body);
-  console.log(req.query);
-  // console.log(req.header);
-  console.log(req.path);
-  console.log(req.body);
-  version = req.body.version;
-  updatedAt = req.body.updatedAt;
-  return await res.status(201).json({
-    created: true,
-    version,
-    updatedAt,
-  });
+  // if the tokens haven't been created yet, create them and return the
+  // appropriate response
+  if (!tokens.tokens) {
+    console.log("creating...");
+    const pluginVersion = req.body.version;
+    const updatedAt = req.body.updatedAt;
+
+    await tokens.create({ pluginVersion, updatedAt });
+    const metadata = tokens.metadata;
+
+    return await res.status(201).json({
+      created: true,
+      version: metadata.pluginVersion,
+      updatedAt: metadata.updatedAt,
+    });
+  }
+  // otherwise, return the current values
+  else {
+    console.log("fetching initial...");
+
+    const values = tokens.tokens;
+    const metadata = tokens.metadata;
+    return await res.status(200).json({
+      created: false,
+      version: metadata.pluginVersion,
+      updatedAt: metadata.updatedAt,
+      values,
+    });
+  }
 });
 
 app.get("/figma", async (req, res) => {
   console.log("getting...");
-  console.log(req.body);
-  console.log(req.query);
-  // console.log(req.header);
-  console.log(req.path);
-  // console.log(req.formData)
-  // console.log(res.json());
-  // console.log(req.method);
+
+  const values = tokens.tokens;
+  const metadata = tokens.metadata;
   return await res.status(200).json({
-    version,
-    updatedAt,
-    values: {},
+    created: false,
+    version: metadata.pluginVersion,
+    updatedAt: metadata.updatedAt,
+    values,
   });
 });
-
-// app.get("/figma/:tokenSet", (req, res) => {
-//   console.log(req);
-//   console.log("getting set....");
-// });
 
 app.put("/figma", async (req, res) => {
-  console.log("putting...");
-  console.log(inspect(req.body, true, 10, true));
-  version = req.body.version;
-  updatedAt = req.body.updatedAt;
-  return await res.status(200).json({
-    version,
-    updatedAt,
-    values: {},
-  });
-});
+  console.log("updating...");
 
-app.all("/figma", (req, res) => {
-  console.log(req.method);
+  const pluginVersion = req.body.version;
+  const updatedAt = req.body.updatedAt;
+  const newValues = req.body.values;
+
+  await tokens.update(newValues, { pluginVersion, updatedAt });
+  const metadata = tokens.metadata;
+
+  return await res.status(200).json({
+    version: metadata.pluginVersion,
+    updatedAt: metadata.updatedAt,
+    values: tokens.tokens,
+  });
 });
 
 // app.all("/figma", () => {

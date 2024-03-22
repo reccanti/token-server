@@ -1,8 +1,10 @@
 import mock from "mock-fs";
-import { existsSync } from "fs";
+import { existsSync, promises as fsPromises } from "fs";
 import { resolve } from "path";
-import { readFile, readdir } from "fs/promises";
+// import { readFile, readdir } from "fs/promises";
 import { DEFAULT_TOKEN_DIR, TokenFileHandler } from "./TokenFileHandler";
+
+const { readdir, readFile } = fsPromises;
 
 describe("TokenFileHandler", () => {
   beforeEach(() => {
@@ -17,8 +19,14 @@ describe("TokenFileHandler", () => {
     const handler = new TokenFileHandler();
     await handler.initializeFileStructure();
 
-    const cwd = await readdir(process.cwd(), { recursive: true });
-    const tokenDir = await readdir(DEFAULT_TOKEN_DIR, { recursive: true });
+    const cwd = await readdir(process.cwd(), {
+      recursive: true,
+      withFileTypes: true,
+    });
+    const tokenDir = await readdir(DEFAULT_TOKEN_DIR, {
+      recursive: true,
+      withFileTypes: true,
+    });
 
     console.log(cwd);
     console.log(tokenDir);

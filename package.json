@@ -1,6 +1,6 @@
 {
   "name": "tokens-studio-server",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "A server that can connects Tokens Studio to code and allows realtime updates",
   "main": "index.js",
   "scripts": {

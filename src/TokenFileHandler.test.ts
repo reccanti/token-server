@@ -6,7 +6,7 @@ import { DEFAULT_TOKEN_DIR, TokenFileHandler } from "./TokenFileHandler";
 
 describe("TokenFileHandler", () => {
   beforeEach(() => {
-    mock({});
+    mock({}, { createCwd: true });
   });
 
   afterEach(() => {
@@ -17,6 +17,7 @@ describe("TokenFileHandler", () => {
     const handler = new TokenFileHandler();
     await handler.initializeFileStructure();
 
+    console.log(mock.getMockRoot());
     console.log(DEFAULT_TOKEN_DIR);
     console.log(process.cwd());
 

@@ -6,7 +6,7 @@ import { DEFAULT_TOKEN_DIR, TokenFileHandler } from "./TokenFileHandler";
 
 describe("TokenFileHandler", () => {
   beforeEach(() => {
-    mock({}, { createCwd: true });
+    mock({}, { createCwd: true, createTmp: true });
   });
 
   afterEach(() => {

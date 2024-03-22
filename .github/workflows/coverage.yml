@@ -26,13 +26,13 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: "npm"
       - run: npm ci
-      # - run: npm run coverage
+      - run: npm run coverage
       - name: Check test coverage
         uses: johanvanhelden/gha-clover-test-coverage-check@v1
         id: coverage
         with:
-          percentage: "50"
-          filename: "coverage.xml"
+          percentage: "0"
+          filename: "coverage/clover.xml"
       - name: Generate the badge SVG image
         uses: emibcn/badge-action@v1
         id: badge

@@ -31,7 +31,7 @@ jobs:
         uses: johanvanhelden/gha-clover-test-coverage-check@v1
         id: coverage
         with:
-          percentage: "0"
+          percentage: "1"
           filename: "coverage/clover.xml"
       - name: Generate the badge SVG image
         uses: emibcn/badge-action@v1

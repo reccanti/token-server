@@ -5,7 +5,8 @@ import { glob } from "glob";
 import { writeFile, readFile } from "fs/promises";
 import { Metadata, Tokens } from "./TokenModel";
 import { DesignTokens } from "style-dictionary/types/DesignToken";
-import chokidar from "chokidar";
+import chokidar, { FSWatcher } from "chokidar";
+// import { inspect } from "util";
 
 /**
  * This handles code responsible for interacting with Token files, such as
@@ -13,15 +14,32 @@ import chokidar from "chokidar";
  * data from files and turning into a Tokens object
  */
 
-const TOKEN_DIR = resolve(__dirname, "..", "tokens");
-const METADATA_DIR = resolve(TOKEN_DIR, "metadata");
-const THEMES_DIR = resolve(TOKEN_DIR, "themes");
+export const DEFAULT_TOKEN_DIR = resolve(process.cwd(), "tokens");
+// export const DEFAULT_METADATA_DIR = resolve(DEFAULT_TOKEN_DIR, "metadata");
+// export const DEFAULT_THEMES_DIR = resolve(DEFAULT_TOKEN_DIR, "themes");
+
+interface Settings {
+  tokenDir: string;
+}
 
 export class TokenFileHandler extends EventEmitter<{
   themesChanged: [Tokens];
 }> {
+  public readonly tokenDir: string;
+  public readonly metadataDir: string;
+  public readonly themesDir: string;
+
+  private watchProcess: FSWatcher;
+
+  constructor(settings: Partial<Settings> = {}) {
+    super();
+    this.tokenDir = settings.tokenDir || DEFAULT_TOKEN_DIR;
+    this.metadataDir = resolve(this.tokenDir, "metadata");
+    this.themesDir = resolve(this.tokenDir, "themes");
+  }
+
   private async loadMetadata(): Promise<Metadata | null> {
-    const metadataFile = resolve(METADATA_DIR, "metadata.json");
+    const metadataFile = resolve(this.metadataDir, "metadata.json");
     const foundFiles = await glob(metadataFile);
     if (foundFiles.length !== 1) {
       console.error(`metadata file not found at ${metadataFile}`);
@@ -39,7 +57,7 @@ export class TokenFileHandler extends EventEmitter<{
   }
 
   private async loadThemes(): Promise<DesignTokens> {
-    const themeFiles = await glob(resolve(THEMES_DIR, "*.json"));
+    const themeFiles = await glob(resolve(this.themesDir, "*.json"));
 
     let loadedTokens: DesignTokens = {};
     for (const themeFile of themeFiles) {
@@ -61,10 +79,10 @@ export class TokenFileHandler extends EventEmitter<{
 
   async initializeFileStructure() {
     // initialize theme directories if they don't exist
-    await Promise.all([mkdirp(METADATA_DIR), mkdirp(THEMES_DIR)]);
+    await Promise.all([mkdirp(this.metadataDir), mkdirp(this.themesDir)]);
 
     // initialize metadata if it doesn't already exist
-    const metadataFile = resolve(METADATA_DIR, "metadata.json");
+    const metadataFile = resolve(this.metadataDir, "metadata.json");
     const foundFiles = await glob(metadataFile);
     if (!foundFiles.length) {
       const metadata: Metadata = {
@@ -73,12 +91,20 @@ export class TokenFileHandler extends EventEmitter<{
       };
       await writeFile(metadataFile, JSON.stringify(metadata, null, 2));
     }
+  }
 
+  async watch() {
     // have chokidar watch for file changes an emit events
-    chokidar.watch(THEMES_DIR).on("all", async () => {
+    this.watchProcess = chokidar.watch(this.themesDir).on("all", async () => {
       const newTokens = await this.loadTokensFromFiles();
       this.emit("themesChanged", newTokens);
     });
+  }
+
+  close() {
+    if (this.watchProcess) {
+      this.watchProcess.close();
+    }
   }
 
   async loadTokensFromFiles(): Promise<Tokens> {
@@ -97,16 +123,18 @@ export class TokenFileHandler extends EventEmitter<{
     // write the theme data abnd metadata to the correct files
     const metadata = tokens.metadata;
     const writeMetadata = writeFile(
-      resolve(METADATA_DIR, "metadata.json"),
+      resolve(this.metadataDir, "metadata.json"),
       JSON.stringify(metadata, null, 2)
     );
-    const writeThemes = Object.keys(tokens.tokens).map((theme) => {
-      const themeFile = resolve(THEMES_DIR, `${theme}.json`);
-      return writeFile(
-        themeFile,
-        JSON.stringify(tokens.tokens[theme], null, 2)
-      );
-    });
-    await Promise.all([...writeThemes, writeMetadata]);
+
+    await writeMetadata;
+
+    const themes = Object.keys(tokens.tokens);
+    for (const theme of themes) {
+      const themeFile = resolve(this.themesDir, `${theme}.json`);
+      await writeFile(themeFile, JSON.stringify(tokens.tokens[theme], null, 2));
+    }
   }
 }
+
+const handler = new TokenFileHandler();

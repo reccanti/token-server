@@ -16,3 +16,13 @@ tokens-studio-server ./tokensDir
 | port                  | `-p`, `--port`       | the port the server can be accessed on                                                                                                    | `8000`        |
 | figmaRoute            | `--figmaRoute`, `-r` | The route that Tokens Studio will access the server at                                                                                    | `/`           |
 | styleDictionaryConfig | `--sdConfig`         | Tokens Studio Server provides an initial Style Dictionary config, but you can further customize it by pointing to another config file     | N/A           |
+
+## TODO
+
+- [ ] Support nested folders in the tokens directory
+- [ ] Preview Tokens in generated page
+  - [ ] Make this configurable
+  - [ ] document this seetting/flag
+- [ ] Make token directory configurable
+- [ ] Separate out server definition and executable so it can be run programatically
+  - [ ] Document this

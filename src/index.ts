@@ -6,13 +6,36 @@ import { Tokens } from "./TokenModel";
 import { TokenFileHandler } from "./TokenFileHandler";
 import { Metadata } from "./TokenModel";
 
+import StyleDictionary from "style-dictionary";
+import { registerTransforms } from "@tokens-studio/sd-transforms";
+import { resolve } from "path";
+
 async function start() {
+  await registerTransforms(StyleDictionary);
+
+  // const sd = StyleDictionary.extend({
+  //   source: [resolve(__dirname, "../tokens/**/*.json")],
+  //   platforms: {
+  //     css: {
+  //       transformGroup: "tokens-studio",
+  //       buildPath: "build/css/",
+  //       files: [
+  //         {
+  //           destination: "variables.css",
+  //           format: "css/variables",
+  //         },
+  //       ],
+  //     },
+  //   },
+  // });
+
   // create a file handler and watch for changes
   const fileHandler = new TokenFileHandler();
   await fileHandler.initializeFileStructure();
   let tokens = await fileHandler.loadTokensFromFiles();
   fileHandler.on("themesChanged", (updatedTokens) => {
     tokens = updatedTokens;
+    // console.log(sd.exportPlatform("css"));
   });
 
   const app = express();

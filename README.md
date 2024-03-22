@@ -1,5 +1,7 @@
 # Tokens Studio Server
 
+![example workflow](https://github.com/reccanti/token-server/actions/workflows/coverage.yml/badge.svg)
+
 One of the things I noticed when building [my site](https://blairwilcox.com/) was that shifting between [Tokens Studio](https://tokens.studio/) and local development wasn't easy. A single file export didn't work with Style Dictionary out-the-box and it wasn't easy to incorporate a development change back into Tokens Studio in Figma. The goal of this project is to make that a little easier!
 
 ## How does it work?

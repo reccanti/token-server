@@ -17,6 +17,9 @@ describe("TokenFileHandler", () => {
     const handler = new TokenFileHandler();
     await handler.initializeFileStructure();
 
+    console.log(DEFAULT_TOKEN_DIR);
+    console.log(process.cwd());
+
     // expect the file structure to be initialized correctly
     expect(existsSync(DEFAULT_TOKEN_DIR)).toBe(true);
     expect(existsSync(handler.themesDir)).toBe(true);
